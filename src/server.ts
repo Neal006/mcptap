@@ -24,7 +24,7 @@ function safeSessionFile(raw: string | null): string | null {
   if (!raw) return null;
   const resolved = resolve(raw);
   const root = resolve(sessionsRoot());
-  if (!resolved.startsWith(root + "\\") && !resolved.startsWith(`${root}/`)) return null;
+  if (!resolved.startsWith(`${root}\\`) && !resolved.startsWith(`${root}/`)) return null;
   return existsSync(resolved) ? resolved : null;
 }
 
