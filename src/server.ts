@@ -2,7 +2,6 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DEFAULT_MODEL, estimateCostUsd, knownModels } from "./cost.js";
 import { replayCall } from "./replay.js";
 import { aggregate, correlate, listSessions, readEvents, sessionsRoot } from "./store.js";
 
@@ -33,20 +32,17 @@ function json(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
-function sessionDetail(file: string, model: string) {
+function sessionDetail(file: string) {
   const events = readEvents(file);
   const { calls, notifications, raw } = correlate(events);
   const stats = aggregate(calls);
-  const totalTokens = stats.reduce((sum, s) => sum + s.tokens, 0);
   return {
     file,
     calls,
     notificationCount: notifications.length,
     rawCount: raw.length,
     stats,
-    totalTokens,
-    estimatedCostUsd: estimateCostUsd(totalTokens, model),
-    model,
+    totalTokens: stats.reduce((sum, s) => sum + s.tokens, 0),
   };
 }
 
@@ -61,12 +57,7 @@ export function createDashboardServer() {
     if (url.pathname === "/api/session") {
       const file = safeSessionFile(url.searchParams.get("file"));
       if (!file) return json(res, 404, { error: "unknown session" });
-      const model = url.searchParams.get("model") ?? DEFAULT_MODEL;
-      return json(res, 200, sessionDetail(file, model));
-    }
-
-    if (url.pathname === "/api/models") {
-      return json(res, 200, { default: DEFAULT_MODEL, models: knownModels() });
+      return json(res, 200, sessionDetail(file));
     }
 
     if (url.pathname === "/api/replay" && req.method === "POST") {

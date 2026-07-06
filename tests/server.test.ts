@@ -56,7 +56,7 @@ describe("dashboard API", () => {
     expect(sessions[0]?.server).toBe("github");
   });
 
-  it("returns correlated calls, stats, and cost for a session", async () => {
+  it("returns correlated calls, stats, and token totals for a session", async () => {
     const file = seedSession();
     const detail = (await (
       await fetch(`${base}/api/session?file=${encodeURIComponent(file)}`)
@@ -64,14 +64,13 @@ describe("dashboard API", () => {
       calls: { toolName?: string; latencyMs?: number }[];
       stats: { key: string }[];
       totalTokens: number;
-      estimatedCostUsd: number;
     };
     expect(detail.calls).toHaveLength(1);
     expect(detail.calls[0]?.toolName).toBe("create_pr");
     expect(detail.calls[0]?.latencyMs).toBe(300);
     expect(detail.stats[0]?.key).toBe("tools/call:create_pr");
     expect(detail.totalTokens).toBeGreaterThan(0);
-    expect(detail.estimatedCostUsd).toBeGreaterThan(0);
+    expect(JSON.stringify(detail)).not.toContain("estimatedCostUsd");
   });
 
   it("rejects session paths outside the sessions root", async () => {
@@ -88,12 +87,9 @@ describe("dashboard API", () => {
     expect(await res.text()).toContain("mcptail");
   });
 
-  it("exposes the pricing model list", async () => {
-    const models = (await (await fetch(`${base}/api/models`)).json()) as {
-      default: string;
-      models: string[];
-    };
-    expect(models.models).toContain(models.default);
+  it("no longer exposes a pricing endpoint", async () => {
+    const res = await fetch(`${base}/api/models`);
+    expect(res.headers.get("content-type")).toContain("text/html");
   });
 
   it("streams a live event when a session file grows", async () => {
