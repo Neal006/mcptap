@@ -3,6 +3,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DEFAULT_MODEL, estimateCostUsd, knownModels } from "./cost.js";
+import { replayCall } from "./replay.js";
 import { aggregate, correlate, listSessions, readEvents, sessionsRoot } from "./store.js";
 
 const MIME: Record<string, string> = {
@@ -68,6 +69,36 @@ export function createDashboardServer() {
       return json(res, 200, { default: DEFAULT_MODEL, models: knownModels() });
     }
 
+    if (url.pathname === "/api/replay" && req.method === "POST") {
+      readBody(req)
+        .then(async (body) => {
+          const {
+            file: rawFile,
+            id,
+            startTs,
+          } = body as {
+            file?: string;
+            id?: string | number;
+            startTs?: number;
+          };
+          const file = safeSessionFile(rawFile ?? null);
+          if (!file) return json(res, 404, { error: "unknown session" });
+          const session = listSessions().find((s) => s.file === file);
+          const call = correlate(readEvents(file)).calls.find(
+            (c) => String(c.id) === String(id) && c.startTs === startTs,
+          );
+          if (!session || !call) return json(res, 404, { error: "unknown call" });
+          const outcome = await replayCall(
+            session.command,
+            call.method,
+            (call.request as { params?: unknown }).params,
+          );
+          json(res, 200, { original: call.response ?? null, replay: outcome });
+        })
+        .catch(() => json(res, 400, { error: "invalid request body" }));
+      return;
+    }
+
     if (url.pathname === "/api/live") {
       res.writeHead(200, {
         "content-type": "text/event-stream",
@@ -94,6 +125,24 @@ export function createDashboardServer() {
     }
 
     serveStatic(url.pathname, res);
+  });
+}
+
+function readBody(req: IncomingMessage): Promise<unknown> {
+  return new Promise((resolvePromise, reject) => {
+    let data = "";
+    req.on("data", (chunk: Buffer) => {
+      data += chunk.toString("utf8");
+      if (data.length > 1_000_000) reject(new Error("body too large"));
+    });
+    req.on("end", () => {
+      try {
+        resolvePromise(JSON.parse(data));
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on("error", reject);
   });
 }
 
