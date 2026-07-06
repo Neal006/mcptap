@@ -45,12 +45,6 @@ export const zed: ClientAdapter = {
 Then register it in `src/adapters/index.ts` and add a fixture round-trip test
 in `tests/taps.test.ts` (copy an existing one). That's the whole PR.
 
-## Adding a model to the pricing table
-
-Edit [`src/pricing.json`](src/pricing.json) — keep entries alphabetical, use
-the provider's published input price per million tokens, and link the pricing
-page in your PR description.
-
 ## Ground rules
 
 - **Conventional commits**: `feat(scope): ...`, `fix(scope): ...`, `test(scope): ...` — release-please builds the changelog from these.

@@ -1,7 +1,7 @@
 {
   "name": "mcptail",
   "version": "0.1.0",
-  "description": "See what your AI agent is actually doing. Passive traffic capture, token cost attribution, and replay for MCP servers — one command.",
+  "description": "See what your AI agent is actually doing. Passive traffic capture, token attribution, and replay for MCP servers — one command.",
   "keywords": [
     "mcp",
     "modelcontextprotocol",

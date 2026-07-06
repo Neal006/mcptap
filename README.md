@@ -4,7 +4,7 @@
 
 **See what your AI agent is actually doing. One command.**
 
-Passive traffic capture, token cost attribution, and replay for MCP servers —
+Passive traffic capture, token attribution, and replay for MCP servers —
 works with Claude Code, Cursor, and VS Code, 100% local.
 
 [![CI](https://github.com/Neal006/mcptail/actions/workflows/ci.yml/badge.svg)](https://github.com/Neal006/mcptail/actions/workflows/ci.yml)
@@ -56,10 +56,10 @@ plain pipe rather than breaking your session. `mcptail remove` restores your
 configs (a timestamped backup is also kept next to each file).
 
 The dashboard shows every session live: a timeline of tool calls with latency
-and status, request/response payloads, per-tool p50/p95 latency, estimated
-token counts, and what those tokens cost as input context for your model.
-Click any call to **replay** it against a fresh server instance and reproduce
-a bug in isolation.
+and status, request/response payloads, per-tool p50/p95 latency, and estimated
+token counts per server and tool — so you can see exactly what's filling your
+context window. Click any call to **replay** it against a fresh server
+instance and reproduce a bug in isolation.
 
 ## Comparison
 
@@ -68,7 +68,7 @@ a bug in isolation.
 | Captures **real client traffic** passively | ✅ | ❌ sandbox | ❌ sandbox | ✅ HTTP only |
 | One-command setup on existing configs | ✅ | — | — | ❌ manual gateway |
 | stdio servers (how most local servers run) | ✅ | ✅ | ✅ | ❌ |
-| Token & cost attribution per server/tool | ✅ | ❌ | ❌ | ❌ |
+| Token attribution per server/tool | ✅ | ❌ | ❌ | ❌ |
 | Replay captured calls | ✅ | ❌ | ✅ evals | ❌ |
 | 100% local, no account | ✅ | ✅ | partial | ✅ |
 
@@ -101,10 +101,9 @@ like logs.
 the tap adds microseconds. If recording fails (full disk, whatever), mcptail
 degrades to a plain pipe — your session never breaks.
 
-**Are the token numbers exact?** They're estimates (chars/4) of what each
-payload costs as input context, priced per model from
-[`pricing.json`](src/pricing.json). Good for "which server is eating my
-context", not for accounting.
+**Are the token numbers exact?** They're estimates (chars/4) of how much of
+your context window each payload occupies. Good for "which server is eating
+my context", not for accounting.
 
 **How do I uninstall?** `npx mcptail remove`, then delete `~/.mcptail`.
 
@@ -116,7 +115,7 @@ servers run. See the [roadmap](ROADMAP.md).
 The codebase is small and deliberately boring — a frame splitter, a tee, a
 JSONL store, and a dashboard. Good first issues are labeled
 [`good first issue`](https://github.com/Neal006/mcptail/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22);
-client adapters and pricing-table entries are the easiest way in. See
+client adapters are the easiest way in. See
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
