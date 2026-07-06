@@ -22,3 +22,6 @@ coverage/
 Thumbs.db
 .idea/
 *.swp
+
+# npm pack output
+*.tgz
