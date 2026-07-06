@@ -20,9 +20,17 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build
-      - run: npm publish --provenance --access public
+      - name: Publish to npm (skipped if this version is already live)
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "mcptail@$VERSION" version >/dev/null 2>&1; then
+            echo "mcptail@$VERSION already published — skipping"
+          else
+            npm publish --provenance --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: gh release create "$GITHUB_REF_NAME" --generate-notes
+      - name: GitHub release (idempotent)
+        run: gh release view "$GITHUB_REF_NAME" || gh release create "$GITHUB_REF_NAME" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
