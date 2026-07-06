@@ -215,6 +215,46 @@ tr.selected td {
   background: var(--warn);
 }
 
+.timeline-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px;
+}
+
+.timeline-controls input[type="search"] {
+  min-width: 240px;
+  max-width: 360px;
+  flex: 1;
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font: inherit;
+}
+
+.timeline-controls input[type="search"]:focus {
+  outline: 1px solid var(--accent-dim);
+  border-color: var(--accent-dim);
+}
+
+.timeline-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.empty-row {
+  color: var(--text-dim);
+  font-family: var(--sans);
+  text-align: center;
+  padding: 18px 10px;
+}
+
 .detail {
   position: fixed;
   right: 0;

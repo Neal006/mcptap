@@ -37,11 +37,13 @@ export interface SessionDetail {
   totalTokens: number;
 }
 
+const readJson = <T>(response: Response): Promise<T> => response.json() as Promise<T>;
+
 export const fetchSessions = (): Promise<SessionInfo[]> =>
-  fetch("/api/sessions").then((r) => r.json());
+  fetch("/api/sessions").then(readJson<SessionInfo[]>);
 
 export const fetchSession = (file: string): Promise<SessionDetail> =>
-  fetch(`/api/session?file=${encodeURIComponent(file)}`).then((r) => r.json());
+  fetch(`/api/session?file=${encodeURIComponent(file)}`).then(readJson<SessionDetail>);
 
 export interface ReplayResponse {
   original: unknown;
@@ -57,7 +59,7 @@ export const postReplay = (
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ file, id, startTs }),
-  }).then((r) => r.json());
+  }).then(readJson<ReplayResponse>);
 
 export function subscribeLive(onChange: (file: string) => void): () => void {
   const source = new EventSource("/api/live");
