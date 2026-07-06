@@ -45,6 +45,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.2",
+    "@modelcontextprotocol/server-everything": "^2026.7.4",
     "@types/cross-spawn": "^6.0.6",
     "@types/node": "^26.1.0",
     "simple-git-hooks": "^2.13.1",
@@ -53,6 +54,7 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "commander": "^15.0.0",
     "cross-spawn": "^7.0.6"
   }
