@@ -53,6 +53,7 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
+    "commander": "^15.0.0",
     "cross-spawn": "^7.0.6"
   }
 }
