@@ -47,7 +47,7 @@ in `tests/taps.test.ts` (copy an existing one). That's the whole PR.
 
 ## Ground rules
 
-- **Conventional commits**: `feat(scope): ...`, `fix(scope): ...`, `test(scope): ...` — release-please builds the changelog from these.
+- **Conventional commits**: `feat(scope): ...`, `fix(scope): ...`, `test(scope): ...` — release notes are generated from these on every tagged release.
 - **Tests ride with the code**: a module change without its test change is an incomplete PR.
 - **The proxy never breaks a session**: anything on the traffic path must degrade to a plain pipe on failure, never throw.
 - **Recording is passive**: mcptail must never mutate, reorder, or delay traffic.
