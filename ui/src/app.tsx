@@ -4,6 +4,8 @@ import {
   fetchModels,
   fetchSession,
   fetchSessions,
+  postReplay,
+  type ReplayResponse,
   type SessionDetail,
   type SessionInfo,
   subscribeLive,
@@ -169,7 +171,9 @@ export function App() {
         )}
       </main>
 
-      {call && <CallDetail call={call} onClose={() => setCall(null)} />}
+      {call && detail && (
+        <CallDetail call={call} file={detail.file} onClose={() => setCall(null)} />
+      )}
     </div>
   );
 }
@@ -183,7 +187,19 @@ function Tile({ value, label, err }: { value: string; label: string; err?: boole
   );
 }
 
-function CallDetail({ call, onClose }: { call: Call; onClose: () => void }) {
+function CallDetail({ call, file, onClose }: { call: Call; file: string; onClose: () => void }) {
+  const [replay, setReplay] = useState<ReplayResponse["replay"] | "running" | null>(null);
+
+  const runReplay = () => {
+    if (!confirm("Replay re-executes this call against a fresh server instance. Continue?")) {
+      return;
+    }
+    setReplay("running");
+    postReplay(file, call.id, call.startTs)
+      .then((r) => setReplay(r.replay))
+      .catch((err) => setReplay({ ok: false, error: String(err) }));
+  };
+
   return (
     <div class="detail">
       <button type="button" class="close" onClick={onClose}>
@@ -194,9 +210,19 @@ function CallDetail({ call, onClose }: { call: Call; onClose: () => void }) {
         {call.isError ? "❌ error" : call.response ? "✓ ok" : "⏳ no response captured"}
         {call.latencyMs !== undefined && ` · ${call.latencyMs}ms`}
         {` · ${(call.requestTokens + call.responseTokens).toLocaleString()} est. tokens`}
+        {" · "}
+        <button type="button" class="copy" onClick={runReplay} disabled={replay === "running"}>
+          {replay === "running" ? "replaying…" : "▶ replay"}
+        </button>
       </div>
       <JsonBlock title="Request" value={call.request} />
       {call.response !== undefined && <JsonBlock title="Response" value={call.response} />}
+      {replay && replay !== "running" && (
+        <JsonBlock
+          title={replay.ok ? "Replay result" : "Replay failed"}
+          value={replay.ok ? replay.result : replay.error}
+        />
+      )}
     </div>
   );
 }

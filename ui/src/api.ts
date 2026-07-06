@@ -50,6 +50,22 @@ export const fetchSession = (file: string, model?: string): Promise<SessionDetai
 export const fetchModels = (): Promise<{ default: string; models: string[] }> =>
   fetch("/api/models").then((r) => r.json());
 
+export interface ReplayResponse {
+  original: unknown;
+  replay: { ok: boolean; result?: unknown; error?: string };
+}
+
+export const postReplay = (
+  file: string,
+  id: string | number,
+  startTs: number,
+): Promise<ReplayResponse> =>
+  fetch("/api/replay", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ file, id, startTs }),
+  }).then((r) => r.json());
+
 export function subscribeLive(onChange: (file: string) => void): () => void {
   const source = new EventSource("/api/live");
   source.onmessage = (event) => {
