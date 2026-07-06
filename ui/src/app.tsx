@@ -1,0 +1,217 @@
+import { useEffect, useMemo, useState } from "preact/hooks";
+import {
+  type Call,
+  fetchModels,
+  fetchSession,
+  fetchSessions,
+  type SessionDetail,
+  type SessionInfo,
+  subscribeLive,
+} from "./api.js";
+
+const time = (ts: number) => new Date(ts).toLocaleTimeString();
+const day = (ts: number) => new Date(ts).toLocaleDateString();
+
+export function App() {
+  const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [detail, setDetail] = useState<SessionDetail | null>(null);
+  const [call, setCall] = useState<Call | null>(null);
+  const [models, setModels] = useState<{ default: string; models: string[] } | null>(null);
+  const [model, setModel] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    fetchSessions().then((list) => {
+      setSessions(list);
+      if (list[0]) setSelected((cur) => cur ?? list[0].file);
+    });
+    fetchModels().then(setModels);
+  }, []);
+
+  useEffect(() => {
+    return subscribeLive((changedFile) => {
+      fetchSessions().then(setSessions);
+      setSelected((cur) => {
+        if (cur === changedFile) fetchSession(changedFile, model).then(setDetail);
+        return cur ?? changedFile;
+      });
+    });
+  }, [model]);
+
+  useEffect(() => {
+    if (selected) fetchSession(selected, model).then(setDetail);
+    else setDetail(null);
+  }, [selected, model]);
+
+  const errorCount = useMemo(() => detail?.calls.filter((c) => c.isError).length ?? 0, [detail]);
+
+  return (
+    <div class="layout">
+      <header>
+        <span class="logo">mcptap</span>
+        <span class="live-dot" title="live" />
+        <span class="spacer" />
+        {models && (
+          <select
+            value={model ?? models.default}
+            onChange={(e) => setModel((e.target as HTMLSelectElement).value)}
+            title="price tokens against this model"
+          >
+            {models.models.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        )}
+      </header>
+
+      <aside>
+        <h2>Sessions</h2>
+        {sessions.map((s) => (
+          <button
+            type="button"
+            key={s.file}
+            class={`session ${s.file === selected ? "active" : ""}`}
+            onClick={() => {
+              setSelected(s.file);
+              setCall(null);
+            }}
+          >
+            <div class="name">{s.server}</div>
+            <div class="when">
+              {day(s.startedAt)} {time(s.startedAt)}
+            </div>
+          </button>
+        ))}
+        {!sessions.length && (
+          <div class="empty">
+            No sessions yet.
+            <br />
+            Run <code>npx mcptap init</code>, then use your MCP client.
+          </div>
+        )}
+      </aside>
+
+      <main>
+        {detail ? (
+          <>
+            <div class="tiles">
+              <Tile value={String(detail.calls.length)} label="calls" />
+              <Tile value={String(errorCount)} label="errors" err={errorCount > 0} />
+              <Tile value={detail.totalTokens.toLocaleString()} label="est. tokens" />
+              <Tile
+                value={
+                  detail.estimatedCostUsd === null ? "—" : `$${detail.estimatedCostUsd.toFixed(4)}`
+                }
+                label={`est. cost (${detail.model})`}
+              />
+            </div>
+
+            <h2>Per tool</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>tool / method</th>
+                  <th style="text-align:right">calls</th>
+                  <th style="text-align:right">errors</th>
+                  <th style="text-align:right">p50</th>
+                  <th style="text-align:right">p95</th>
+                  <th style="text-align:right">tokens</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detail.stats.map((s) => (
+                  <tr key={s.key}>
+                    <td>{s.key}</td>
+                    <td class="num">{s.count}</td>
+                    <td class="num">{s.errors || ""}</td>
+                    <td class="num">{s.p50LatencyMs}ms</td>
+                    <td class="num">{s.p95LatencyMs}ms</td>
+                    <td class="num">{s.tokens.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div class="section-gap" />
+            <h2>Timeline</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>call</th>
+                  <th>time</th>
+                  <th style="text-align:right">latency</th>
+                  <th style="text-align:right">tokens</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detail.calls.map((c) => (
+                  <tr
+                    key={`${c.startTs}-${String(c.id)}`}
+                    class={`call ${call === c ? "selected" : ""}`}
+                    onClick={() => setCall(c)}
+                  >
+                    <td>
+                      <span class={`status ${c.isError ? "err" : c.response ? "" : "pending"}`} />
+                      {c.toolName ?? c.method}
+                    </td>
+                    <td class="num">{time(c.startTs)}</td>
+                    <td class="num">{c.latencyMs === undefined ? "…" : `${c.latencyMs}ms`}</td>
+                    <td class="num">{(c.requestTokens + c.responseTokens).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        ) : (
+          <div class="empty">Select a session.</div>
+        )}
+      </main>
+
+      {call && <CallDetail call={call} onClose={() => setCall(null)} />}
+    </div>
+  );
+}
+
+function Tile({ value, label, err }: { value: string; label: string; err?: boolean }) {
+  return (
+    <div class="tile">
+      <div class={`value ${err ? "err" : ""}`}>{value}</div>
+      <div class="label">{label}</div>
+    </div>
+  );
+}
+
+function CallDetail({ call, onClose }: { call: Call; onClose: () => void }) {
+  return (
+    <div class="detail">
+      <button type="button" class="close" onClick={onClose}>
+        ×
+      </button>
+      <h3>{call.toolName ?? call.method}</h3>
+      <div class="meta">
+        {call.isError ? "❌ error" : call.response ? "✓ ok" : "⏳ no response captured"}
+        {call.latencyMs !== undefined && ` · ${call.latencyMs}ms`}
+        {` · ${(call.requestTokens + call.responseTokens).toLocaleString()} est. tokens`}
+      </div>
+      <JsonBlock title="Request" value={call.request} />
+      {call.response !== undefined && <JsonBlock title="Response" value={call.response} />}
+    </div>
+  );
+}
+
+function JsonBlock({ title, value }: { title: string; value: unknown }) {
+  const text = JSON.stringify(value, null, 2);
+  return (
+    <>
+      <h4>
+        {title}
+        <button type="button" class="copy" onClick={() => navigator.clipboard.writeText(text)}>
+          copy
+        </button>
+      </h4>
+      <pre>{text}</pre>
+    </>
+  );
+}
