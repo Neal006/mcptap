@@ -1,0 +1,13 @@
+{
+  "$comment": "Input price per million tokens (USD). MCP payloads are consumed as input context by the client's model. PRs adding models are welcome — keep entries alphabetical.",
+  "defaultModel": "claude-opus-4-8",
+  "models": {
+    "claude-fable-5": { "inputPerMTok": 10.0 },
+    "claude-haiku-4-5": { "inputPerMTok": 1.0 },
+    "claude-opus-4-6": { "inputPerMTok": 5.0 },
+    "claude-opus-4-7": { "inputPerMTok": 5.0 },
+    "claude-opus-4-8": { "inputPerMTok": 5.0 },
+    "claude-sonnet-4-6": { "inputPerMTok": 3.0 },
+    "claude-sonnet-5": { "inputPerMTok": 3.0 }
+  }
+}
