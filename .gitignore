@@ -1,0 +1,24 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Test / tooling caches
+coverage/
+.vite/
+
+# Claude Code local
+.claude/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
