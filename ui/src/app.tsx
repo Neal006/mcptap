@@ -9,6 +9,7 @@ import {
   type SessionInfo,
   subscribeLive,
 } from "./api.js";
+import { callLabel, filterTimelineCalls } from "./timeline-filter.js";
 
 const time = (ts: number) => new Date(ts).toLocaleTimeString();
 const day = (ts: number) => new Date(ts).toLocaleDateString();
@@ -18,6 +19,8 @@ export function App() {
   const [selected, setSelected] = useState<string | null>(null);
   const [detail, setDetail] = useState<SessionDetail | null>(null);
   const [call, setCall] = useState<Call | null>(null);
+  const [timelineQuery, setTimelineQuery] = useState("");
+  const [errorsOnly, setErrorsOnly] = useState(false);
 
   useEffect(() => {
     fetchSessions().then((list) => {
@@ -42,6 +45,10 @@ export function App() {
   }, [selected]);
 
   const errorCount = useMemo(() => detail?.calls.filter((c) => c.isError).length ?? 0, [detail]);
+  const filteredCalls = useMemo(
+    () => (detail ? filterTimelineCalls(detail.calls, timelineQuery, errorsOnly) : []),
+    [detail, errorsOnly, timelineQuery],
+  );
 
   return (
     <div class="layout">
@@ -115,6 +122,23 @@ export function App() {
 
             <div class="section-gap" />
             <h2>Timeline</h2>
+            <div class="timeline-controls">
+              <input
+                aria-label="Filter timeline calls"
+                type="search"
+                placeholder="filter by tool or method"
+                value={timelineQuery}
+                onInput={(event) => setTimelineQuery(event.currentTarget.value)}
+              />
+              <label>
+                <input
+                  type="checkbox"
+                  checked={errorsOnly}
+                  onChange={(event) => setErrorsOnly(event.currentTarget.checked)}
+                />
+                errors only
+              </label>
+            </div>
             <table>
               <thead>
                 <tr>
@@ -125,7 +149,7 @@ export function App() {
                 </tr>
               </thead>
               <tbody>
-                {detail.calls.map((c) => (
+                {filteredCalls.map((c) => (
                   <tr
                     key={`${c.startTs}-${String(c.id)}`}
                     class={`call ${call === c ? "selected" : ""}`}
@@ -133,13 +157,20 @@ export function App() {
                   >
                     <td>
                       <span class={`status ${c.isError ? "err" : c.response ? "" : "pending"}`} />
-                      {c.toolName ?? c.method}
+                      {callLabel(c)}
                     </td>
                     <td class="num">{time(c.startTs)}</td>
                     <td class="num">{c.latencyMs === undefined ? "…" : `${c.latencyMs}ms`}</td>
                     <td class="num">{(c.requestTokens + c.responseTokens).toLocaleString()}</td>
                   </tr>
                 ))}
+                {!filteredCalls.length && (
+                  <tr>
+                    <td class="empty-row" colSpan={4}>
+                      no matching calls
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </>
@@ -182,7 +213,7 @@ function CallDetail({ call, file, onClose }: { call: Call; file: string; onClose
       <button type="button" class="close" onClick={onClose}>
         ×
       </button>
-      <h3>{call.toolName ?? call.method}</h3>
+      <h3>{callLabel(call)}</h3>
       <div class="meta">
         {call.isError ? "❌ error" : call.response ? "✓ ok" : "⏳ no response captured"}
         {call.latencyMs !== undefined && ` · ${call.latencyMs}ms`}
