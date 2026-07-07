@@ -23,6 +23,17 @@ describe("filterTimelineCalls", () => {
   it("matches tool or method names case-insensitively", () => {
     expect(filterTimelineCalls(calls, "GITHUB", false).map((entry) => entry.id)).toEqual(["1"]);
     expect(filterTimelineCalls(calls, "resources", false).map((entry) => entry.id)).toEqual(["2"]);
+    expect(filterTimelineCalls(calls, "tools/call", false).map((entry) => entry.id)).toEqual([
+      "1",
+      "3",
+    ]);
+    expect(
+      filterTimelineCalls(
+        [call({ id: "4", toolName: "", method: "resources/list" })],
+        "resources",
+        false,
+      ).map((entry) => entry.id),
+    ).toEqual(["4"]);
   });
 
   it("can show only errored calls", () => {
