@@ -9,7 +9,7 @@ import {
   type SessionInfo,
   subscribeLive,
 } from "./api.js";
-import { filterTimelineCalls } from "./timeline-filter.js";
+import { callLabel, filterTimelineCalls } from "./timeline-filter.js";
 
 const time = (ts: number) => new Date(ts).toLocaleTimeString();
 const day = (ts: number) => new Date(ts).toLocaleDateString();
@@ -157,7 +157,7 @@ export function App() {
                   >
                     <td>
                       <span class={`status ${c.isError ? "err" : c.response ? "" : "pending"}`} />
-                      {c.toolName ?? c.method}
+                      {callLabel(c)}
                     </td>
                     <td class="num">{time(c.startTs)}</td>
                     <td class="num">{c.latencyMs === undefined ? "…" : `${c.latencyMs}ms`}</td>
@@ -213,7 +213,7 @@ function CallDetail({ call, file, onClose }: { call: Call; file: string; onClose
       <button type="button" class="close" onClick={onClose}>
         ×
       </button>
-      <h3>{call.toolName ?? call.method}</h3>
+      <h3>{callLabel(call)}</h3>
       <div class="meta">
         {call.isError ? "❌ error" : call.response ? "✓ ok" : "⏳ no response captured"}
         {call.latencyMs !== undefined && ` · ${call.latencyMs}ms`}

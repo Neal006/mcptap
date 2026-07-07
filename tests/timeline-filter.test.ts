@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Call } from "../ui/src/api.js";
-import { filterTimelineCalls } from "../ui/src/timeline-filter.js";
+import { callLabel, filterTimelineCalls } from "../ui/src/timeline-filter.js";
 
 const call = (overrides: Partial<Call>): Call => ({
   id: overrides.id ?? "1",
@@ -42,5 +42,11 @@ describe("filterTimelineCalls", () => {
 
   it("combines search and errors-only filters", () => {
     expect(filterTimelineCalls(calls, "filesystem", true).map((entry) => entry.id)).toEqual(["3"]);
+  });
+});
+
+describe("callLabel", () => {
+  it("falls back to method for empty tool names", () => {
+    expect(callLabel(call({ toolName: "", method: "tools/call" }))).toBe("tools/call");
   });
 });
